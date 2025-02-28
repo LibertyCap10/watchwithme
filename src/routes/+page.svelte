@@ -1,9 +1,10 @@
 <script>
   export let data;
   let items = data.items || []; // Default to empty array if data.items is undefined
-  let newFor = '';
-  let newUrl = '';
+  let newFor = 'Sarah'; // Default value for "For"
+  let newUrl = ''; // URL input without "https://"
   let isMenuOpen = false;
+  let isUrlChanged = false; // Track if URL input has changed
 
   // Local feedback state for each item
   let feedbackInputs = {};
@@ -13,7 +14,9 @@
   // Add a new item
   async function addItem() {
     if (newFor.trim() && newUrl.trim()) {
-      const newItem = { for: newFor.trim(), url: newUrl.trim(), feedback: '', thumbsUp: false, thumbsDown: false };
+      // Prepend "https://" if not already present, avoiding duplication
+      const url = newUrl.startsWith('http://') || newUrl.startsWith('https://') ? newUrl.trim() : `https://${newUrl.trim()}`;
+      const newItem = { for: newFor.trim(), url, feedback: '', thumbsUp: false, thumbsDown: false };
       try {
         console.log('Adding item:', newItem);
         const res = await fetch('/api/share', {
@@ -25,8 +28,9 @@
           const data = await res.json();
           console.log('Add response:', data);
           items = data.items;
-          newFor = '';
-          newUrl = '';
+          newFor = 'Sarah'; // Reset to default
+          newUrl = ''; // Clear URL input
+          isUrlChanged = false; // Reset change tracker
           feedbackInputs = {}; // Reset local feedback state
         } else {
           console.error('Add failed:', res.status, res.statusText);
@@ -102,6 +106,12 @@
       hour12: true 
     });
   }
+
+  // Handle URL input change
+  function handleUrlChange(event) {
+    newUrl = event.target.value;
+    isUrlChanged = newUrl.trim() !== ''; // Show button if input is not empty
+  }
 </script>
 
 <div class="bg-white">
@@ -165,20 +175,28 @@
             <input
               type="text"
               bind:value={newFor}
-              placeholder="For (e.g., 'For you, babe')"
+              placeholder="For (e.g., 'Sarah')"
               class="border p-2 w-full rounded-md text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
             />
-            <input
-              type="url"
-              bind:value={newUrl}
-              placeholder="Enter a URL"
-              class="border p-2 w-full rounded-md text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-            />
+            <div class="flex items-center border rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-600">
+              <div class="bg-blue-100 text-blue-600 px-2 py-2 rounded-l-md font-medium sm:text-sm">
+                https://
+              </div>
+              <input
+                type="text"
+                bind:value={newUrl}
+                on:input={handleUrlChange}
+                placeholder="example.com"
+                class="flex-1 border-0 p-2 text-gray-900 placeholder:text-gray-400 sm:text-sm sm:leading-6 focus:ring-0"
+              />
+            </div>
             <button
               type="submit"
-              class="mt-4 rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              class="mt-4 rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-opacity duration-300"
+              class:opacity-0={!isUrlChanged}
+              class:opacity-100={isUrlChanged}
             >
-              Add Item
+              Add URL
             </button>
           </form>
 
